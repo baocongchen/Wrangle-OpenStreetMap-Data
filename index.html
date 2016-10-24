@@ -25,38 +25,127 @@
         </header>
 
         <section id="downloads" class="clearfix">
-          <a href="https://github.com/baocongchen/Wrangle-OpenStreetMap-Data/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
-          <a href="https://github.com/baocongchen/Wrangle-OpenStreetMap-Data/blob/master/irvine.bz2" id="download-tar-gz" class="button"><span>Download data</span></a>
-          <a href="https://github.com/baocongchen/Wrangle-OpenStreetMap-Data" id="view-on-github" class="button"><span>View on GitHub</span></a>
+          
+          <a href="https://github.com/baocongchen/Wrangle-OpenStreetMap-Data/blob/master/irvine.bz2" class="button"><span>Download data</span></a>
+          
         </section>
-
         <hr>
 
         <section id="main_content">
           <h3>
 <a id="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Section 1: Problems Encountered in the Map</h3>
 
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here <a href="https://guides.github.com/features/mastering-markdown/">using GitHub Flavored Markdown</a>, select a template crafted by a designer, and publish. After your page is generated, you can check out the new <code>gh-pages</code> branch locally. If you’re using GitHub Desktop, simply sync your repository and you’ll see the new branch.</p>
+<p>After initially downloading the open street map of Irvine and running it against a provisional data.py file, I noticed that the data has abbreviated street names for examples: Edinger Ave, Dyer Rd West...etc </p>
 
-<h3>
-<a id="designer-templates" class="anchor" href="#designer-templates" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Section 1: Problems Encountered in the Map</h3>
 
-<p>We’ve crafted some handsome templates for you to use. Go ahead and click 'Continue to layouts' to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved.</p>
+<h4>Abbreviated Street Names</h4>                                                          
+<p>Once the data was imported to MongoDB, some basic querying revealed street name abbreviations. I updated all substrings in problematic address strings, such that “Dyer Rd West” becomes “Dyer Road West”.
+</p>  
+
+<h5># Sort postcodes by count, descending</h5>
+ <pre>> db.project3.aggregate([{"$match":{"address.postcode":{"$exists":1}}}, {"$group":{"_id":"$address.postcode", "count":{"$sum":1}}}, {"$sort":{"count":­1}}])</pre>                                               
+                                            
+<p>Here are the top two results, beginning with the highest count:</p>
+<pre>[ {"_id" : "92630", "count" : 14815},
+{"_id" : "92620", "count" : 7518}, ...</pre>                                                
+
+                                                                                        
+<p>Considering the relatively few documents that included postal codes, of those, it appears that out of the top ten, two aren’t in Irvine. That struck me as surprisingly high to be a blatant error, and found that the number one postal code "92630" lies in Lake Forest, CA. So, I performed another aggregation to verify a certain suspicion...</p>    
+
+<h5># Sort cities by count, descending</h5>
+<pre>> db.project3.aggregate([{"$match":{"address.city":{"$exists":1}}},{"$group":{"_id":"$address.city", "count":{"$sum":1}}}, {"$sort":{"count":­1}}]) </pre>
+                                                                                                 
+<p>And, the results, edited for readability:</p>
+<pre>[{ "_id":"Irvine", "count":25014 },
+{ "_id":"Lake Forest", "count":14556 },
+{ "_id":"Tustin", "count":2181 },...</pre>
+
+
+<br>
+
+                                                
+These results confirmed my suspicion that this metro extract would perhaps be more aptly named “Orange County's Metropolitan Area” for its inclusion of surrounding cities in the sprawl.
+So, these postal codes aren’t “incorrect,” but simply unexpected.</p>
 
 <h3>
 <a id="creating-pages-manually" class="anchor" href="#creating-pages-manually" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Section 2: Data Overview</h3>
 
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
+<p>This section contains basic statistics about the dataset and the MongoDB queries used to gather them.</p>                                              
+<strong>File sizes:</strong>
+<br>                                                
+irvine.osm .........  91 MB <br>
+irvine.json .... 131 MB <br>
+                                                
+<h5># Number of documents</h5>
+                                                
+<pre>> db.project3.find().count() <br> 422890</pre>                                                
+
+                                                
+<h5># Number of nodes</h5>
+                                                
+<pre>> db.project3.find({"type":"node"}).count() <br> 368429</pre>
+
+                                                
+<h5># Number of ways</h5>                                               
+<pre>> db.project3.find({"type":"way"}).count() <br> 54429</pre>
+
+<h5># Number of unique users</h5>                                                
+<pre>> db.project3.distinct("created.user").length <br> 516</pre> 
+
+<h5># Top 5 contributing users</h5>                                                
+<pre>> db.project3.aggregate([{"$group":{"_id":"$created.user", "count":{"$sum":1}}}, {"$sort":{"count":­1}}, {"$limit":5}]) <br> [ { "_id" : "SJFriedl", "count" : 213984 }, { "_id" : "Aaron Lidman", "count" : 43292 }, { "_id" : "ponzu", "count" : 14541 }, { "_id" : "AM909", "count" : 9900 }, { "_id" : "RichRico", "count" : 6961 } ] </pre>
+                                                             
+<h5># Number of users appearing only once (having 1 post)</h5>
+<pre>> db.project3.aggregate([{"$group":{"_id":"$created.user", "count":{"$sum":1}}}, {"$group":{"_id":"$count", "num_users":{"$sum":1}}}, {"$sort":{"_id":1}}, {"$limit":1}])<br> [ {"_id":1,"num_users":116} ]</pre>                                                
+
+<p># “_id” represents postcount</p>
 
 <h3>
 <a id="authors-and-contributors" class="anchor" href="#authors-and-contributors" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Section 3: Additional Ideas</h3>
 
-<p>You can @mention a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor’s GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
+<p>Contributor statistics and gamification suggestion  
+
+The contributions of users seems incredibly skewed, possibly due to automated versus manual map editing (the word “bot” appears in some usernames). Here are some user percentage statistics:
+                                                
+Top user contribution percentage (“SJFriedl”) - 50.60%
+Combined top 2 users' contribution (“SJFriedl” and “Aaron Lidman”) - 60.84%
+Combined Top 10 users contribution - 86.20%
+Combined number of users making up only 1.7% of posts (7303/422890) - 400 (about 77.5% of all users)
+                                                        
+Thinking about these user percentages, I’m reminded of “gamification” as a motivating force for contribution. In the context of the OpenStreetMap, if user data were more prominently displayed, perhaps others would take an initiative in submitting more edits to the map. </p>                 
+        
+<strong>Additional data exploration using MongoDB queries</strong>
+                                                
+<h5># Top 10 appearing amenities</h5>
+                                                
+<pre>> db.project3.aggregate([{"$match":{"amenity":{"$exists":1}}}, {"$group":{"_id":"$amenity",
+"count":{"$sum":1}}}, {"$sort":{"count":­1}}, {"$limit":10}])
+<br>[ {"_id":"parking","count":534},                                                
+{"_id":"restaurant", "count":264}, 
+…
+{"_id":"toilets","count":51}} ]
+</pre>        
+                                                                                   
+<h5># Biggest religion </h5>                                              
+<pre>> db.project3.aggregate([{"$match":{"amenity":{"$exists":1}, "amenity":"place_of_worship"}}, {"$group":{"_id":"$religion", "count":{"$sum":1}}}, {"$sort":{"count":­1}}, {"$limit":1}])
+<br> [ {"_id":"christian","count":577} ]
+</pre>
+                                                
+
+                                                
+<h5># Most popular cuisines</h5>                                               
+<pre>> db.project3.aggregate([{"$match":{"amenity":{"$exists":1}, "amenity":"restaurant"}}, {"$group":{"_id":"$cuisine", "count":{"$sum":1}}},        {"$sort":{"count":­1}}, {"$limit":5}])
+<br> [ { "_id":"null", "count":118},
+{ "_id":"mexican", "count":30 ...
+{"_id":"burger", "count":13}]
+</pre>
+                                                        
+<p>There are 118 restaurants whose cuisines aren't recorded.</p>
 
 <h3>
 <a id="support-or-contact" class="anchor" href="#support-or-contact" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Section 4: Conclusion</h3>
 
-<p>Having trouble with Pages? Check out our <a href="https://help.github.com/pages">documentation</a> or <a href="https://github.com/contact">contact support</a> and we’ll help you sort it out.</p>
+<p>After this review of the data it’s obvious that the Irvine city area is incomplete, though I believe it has been well cleaned for the purposes of this exercise. It interests me to notice a fair amount of GPS data makes it into OpenStreetMap.org on account of users’ efforts. With a rough GPS data processor in place and working together with a more robust data processor similar to data.pyI think it would be possible to input a great amount of cleaned data to OpenStreetMap.org.</p>
 
 <h3>
 <a id="support-or-contact" class="anchor" href="#support-or-contact" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Section 5: References</h3>
@@ -66,8 +155,6 @@
           Wrangle-openstreetmap-data is maintained by <a href="https://github.com/baocongchen">baocongchen</a><br>
           This page was generated by <a href="https://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.
         </footer>
-
-        
       </div>
     </div>
   </body>

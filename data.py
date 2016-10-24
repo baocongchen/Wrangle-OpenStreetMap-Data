@@ -125,14 +125,15 @@ def shape_element(element):
             	if subtagjsonkey[0] == 'addr':
                     if 'address' not in node:
                     	node['address'] = {}
-                    node['address'][subtagjsonkey[1]] = subtag.attrib['v']
+                    node['address'][subtagjsonkey[1]] = value
                 elif subtagjsonkey[0] == 'turn':
                     continue
                 else:
-                    node[subtagjsonkey[1]] = subtag.attrib['v']
+                    node[subtagjsonkey[1]] = value
                     
             else:
-                node[subtag.attrib['k']] = subtag.attrib['v']
+                if ':' not in key:
+                  node[key] = value
 
         if element.tag == "way":                    
 	        for subtag in element.iter('nd'):
