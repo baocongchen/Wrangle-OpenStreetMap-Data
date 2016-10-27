@@ -5,6 +5,8 @@ import pprint
 import re
 import codecs
 import json
+from audit import update_name, mapping
+from audit_postcode import audit_postcode
 """
 Your task is to wrangle the data and transform the shape of the data
 into the model we mentioned earlier. The output should be a list of dictionaries
@@ -95,15 +97,14 @@ CREATED = [ "version", "changeset", "timestamp", "user", "uid"]
 
 
 def shape_element(element):
+    """Parses element from iterparse, cleans address, and returns dictionary"""
     node = {}
     if element.tag == "way":
-    	node['node_refs'] = []
+    	  node['node_refs'] = []
     if element.tag == "node" or element.tag == "way":
-        # YOUR CODE HERE
         node['type'] = element.tag
         attrs = element.attrib 
         node['created'] = {}
-
         for attr in attrs: 
             if attr == "lat" or attr == "lon":
                 if 'pos' not in node:
@@ -122,29 +123,33 @@ def shape_element(element):
                 continue
             elif lower_colon.match(key):
                 subtagjsonkey = key.split(':')
-            	if subtagjsonkey[0] == 'addr':
+                if subtagjsonkey[0] == 'addr':
                     if 'address' not in node:
-                    	node['address'] = {}
-                    node['address'][subtagjsonkey[1]] = value
+                    	  node['address'] = {}
+                    if subtagjsonkey[1] == 'street':
+                        node['address'][subtagjsonkey[1]] = update_name(value, mapping)
+                    elif subtagjsonkey[1] == 'postcode':
+                        node['address'][subtagjsonkey[1]] = audit_postcode(value)
                 elif subtagjsonkey[0] == 'turn':
                     continue
                 else:
-                    node[subtagjsonkey[1]] = value
-                    
+                    node[subtagjsonkey[1]] = value             
             else:
                 if ':' not in key:
-                  node[key] = value
-
+                    if key == "exit_to":
+                        node[key] = update_name(value, mapping)
+                    else:
+                        node[key] = value
         if element.tag == "way":                    
-	        for subtag in element.iter('nd'):
-	            node['node_refs'].append(subtag.attrib['ref'])      
+            for subtag in element.iter('nd'):
+                node['node_refs'].append(subtag.attrib['ref'])      
         return node
     else:
         return None
 
 
 def process_map(file_in, pretty = False):
-    # You do not need to change this file
+    """writes dictionary to json file and returns data"""
     file_out = "{0}.json".format(file_in)
     data = []
     with codecs.open(file_out, "w") as fo:

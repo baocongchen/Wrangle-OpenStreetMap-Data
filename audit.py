@@ -26,11 +26,27 @@ mapping = { "St": "Street",
             "St.": "Street",
             "Ave": "Avenue",
             "Rd.": "Road",
-            "Rd": "Road"
+            "Rd":  "Road",
+            "Blvd": "Boulevard",
+            "Blvd.": "Boulevard",
+            "Bl": "Boulevard",
+            "DRIVE": "Drive",
+            "Dr": "Drive",
+            "Ct": "Court",
+            "Ct.": "Court",
+            "Pl": "Place",
+            "Sq": "Square",
+            "La": "Lane",
+            "Ln": "Lane",
+            "Tr": "Trail",
+            "Pkwy": "Parkway",
+            "Pkwy.": "Parkway",
+            "Cmns": "Commons"
             }
 
 
 def audit_street_type(street_types, street_name):
+    """audits street type"""
     m = street_type_re.search(street_name)
     if m:
         street_type = m.group()
@@ -39,10 +55,12 @@ def audit_street_type(street_types, street_name):
 
 
 def is_street_name(elem):
+    """returns True if element is street name"""
     return (elem.attrib['k'] == "addr:street" or elem.attrib['k'] == "exit_to")
 
 
 def audit(osmfile):
+    """audits osmfile for street and key type info, and returns street types"""
     osm_file = open(osmfile, "r")
     street_types = defaultdict(set)
     for event, elem in ET.iterparse(osm_file, events=("start",)):
@@ -55,17 +73,19 @@ def audit(osmfile):
 
 
 def update_name(name, mapping):
-
-    # YOUR CODE HERE
+    """update street name to value in mapping"""
     for key in mapping:
-        if (key + '.') in name:
-            name = name.replace(key + '.', mapping[key])
+        if re.search("[^a-z]"+key+"[^a-z]", name):
+            if "." in key:
+                name = name.replace(key, mapping[key])
+            else:
+                if key + "." in name:
+                    name = name.replace(key + ".", mapping[key])
+                else:
+                    name = name.replace(key, mapping[key])
             break
-        elif key in name:    
-            name = name.replace(key, mapping[key])
-            break
-    return name
-        
+    return name   
+ 
 
 def test():
     st_types = audit(OSMFILE)

@@ -35,22 +35,29 @@
           <h3>
 <a id="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Section 1: Problems Encountered in the Map</h3>
 
-<p>After initially downloading the open street map of Irvine and running it against a provisional data.py file, I noticed that the data has abbreviated street names for examples: Edinger Ave, Dyer Rd West...etc </p>
-
-
+<p>After initially downloading the open street map of Irvine and running it against a provisional data.py file, I noticed several problems with the data <br>
+  - Abbreviated street names: Edinger Ave, Dyer Rd West...etc <br>
+  - Wrong format of postcode: CA 92614...etc<br>
+  - Some postal codes do not belong to Irvine city.
+</p>
 <h4>Abbreviated Street Names</h4>                                                          
 <p>Once the data was imported to MongoDB, some basic querying revealed street name abbreviations. I updated all substrings in problematic address strings, such that “Dyer Rd West” becomes “Dyer Road West”.
 </p>  
 
+<h5># Sort postcodes by count, accending</h5>
+ <pre>> db.project3.aggregate([{"$match":{"address.postcode":{"$exists":1}}}, {"$group":{"_id":"$address.postcode", "count":{"$sum":1}}}, {"$sort":{"count":1}}])</pre>    
+<p>Some postcodes appear in wrong format such as 92610-3437, CA 92618, CA 92603... So I updated the data by using pattern detection technique and returned standardized five digit postal codes</p>
+
 <h5># Sort postcodes by count, descending</h5>
  <pre>> db.project3.aggregate([{"$match":{"address.postcode":{"$exists":1}}}, {"$group":{"_id":"$address.postcode", "count":{"$sum":1}}}, {"$sort":{"count":­1}}])</pre>                                               
-                                            
+
 <p>Here are the top two results, beginning with the highest count:</p>
 <pre>[ {"_id" : "92630", "count" : 14815},
 {"_id" : "92620", "count" : 7518}, ...</pre>                                                
-
                                                                                         
 <p>Considering the relatively few documents that included postal codes, of those, it appears that out of the top ten, two aren’t in Irvine. That struck me as surprisingly high to be a blatant error, and found that the number one postal code "92630" lies in Lake Forest, CA. So, I performed another aggregation to verify a certain suspicion...</p>    
+
+  
 
 <h5># Sort cities by count, descending</h5>
 <pre>> db.project3.aggregate([{"$match":{"address.city":{"$exists":1}}},{"$group":{"_id":"$address.city", "count":{"$sum":1}}}, {"$sort":{"count":­1}}]) </pre>
@@ -59,12 +66,8 @@
 <pre>[{ "_id":"Irvine", "count":25014 },
 { "_id":"Lake Forest", "count":14556 },
 { "_id":"Tustin", "count":2181 },...</pre>
-
-
-<br>
-
-                                                
-These results confirmed my suspicion that this metro extract would perhaps be more aptly named “Orange County's Metropolitan Area” for its inclusion of surrounding cities in the sprawl.
+                                            
+<p>These results confirmed my suspicion that this metro extract would perhaps be more aptly named “Orange County's Metropolitan Area” for its inclusion of surrounding cities in the sprawl.
 So, these postal codes aren’t “incorrect,” but simply unexpected.</p>
 
 <h3>
@@ -72,15 +75,13 @@ So, these postal codes aren’t “incorrect,” but simply unexpected.</p>
 
 <p>This section contains basic statistics about the dataset and the MongoDB queries used to gather them.</p>                                              
 <strong>File sizes:</strong>
-<br>                                                
+<br>                                             
 irvine.osm .........  91 MB <br>
-irvine.json .... 131 MB <br>
+irvine.json .... 129 MB <br><br>  
                                                 
 <h5># Number of documents</h5>
                                                 
-<pre>> db.project3.find().count() <br> 422890</pre>                                                
-
-                                                
+<pre>> db.project3.find().count() <br> 422890</pre>                                                                            
 <h5># Number of nodes</h5>
                                                 
 <pre>> db.project3.find({"type":"node"}).count() <br> 368429</pre>
@@ -103,14 +104,14 @@ irvine.json .... 131 MB <br>
 <h3>
 <a id="authors-and-contributors" class="anchor" href="#authors-and-contributors" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Section 3: Additional Ideas</h3>
 
-<p>Contributor statistics and gamification suggestion  
+<p>Contributor statistics and gamification suggestion:  
 
-The contributions of users seems incredibly skewed, possibly due to automated versus manual map editing (the word “bot” appears in some usernames). Here are some user percentage statistics:
+The contributions of users seems incredibly skewed, possibly due to automated versus manual map editing (the word “bot” appears in some usernames). Here are some user percentage statistics:<br><br>
                                                 
-Top user contribution percentage (“SJFriedl”) - 50.60%
-Combined top 2 users' contribution (“SJFriedl” and “Aaron Lidman”) - 60.84%
-Combined Top 10 users contribution - 86.20%
-Combined number of users making up only 1.7% of posts (7303/422890) - 400 (about 77.5% of all users)
+<strong>Top user contribution percentage</strong> (“SJFriedl”) - 50.60%<br>
+<strong>Combined top 2 users' contribution</strong> (“SJFriedl” and “Aaron Lidman”) - 60.84%<br>
+<strong>Combined Top 10 users contribution</strong> - 86.20%<br>
+<strong>Combined number of users</strong> making up only 1.7% of posts (7303/422890) - 400 (about 77.5% of all users)<br><br>
                                                         
 Thinking about these user percentages, I’m reminded of “gamification” as a motivating force for contribution. In the context of the OpenStreetMap, if user data were more prominently displayed, perhaps others would take an initiative in submitting more edits to the map. </p>                 
         
@@ -130,9 +131,7 @@ Thinking about these user percentages, I’m reminded of “gamification” as a
 <pre>> db.project3.aggregate([{"$match":{"amenity":{"$exists":1}, "amenity":"place_of_worship"}}, {"$group":{"_id":"$religion", "count":{"$sum":1}}}, {"$sort":{"count":­1}}, {"$limit":1}])
 <br> [ {"_id":"christian","count":577} ]
 </pre>
-                                                
-
-                                                
+                                                                       
 <h5># Most popular cuisines</h5>                                               
 <pre>> db.project3.aggregate([{"$match":{"amenity":{"$exists":1}, "amenity":"restaurant"}}, {"$group":{"_id":"$cuisine", "count":{"$sum":1}}},        {"$sort":{"count":­1}}, {"$limit":5}])
 <br> [ { "_id":"null", "count":118},
@@ -145,12 +144,15 @@ Thinking about these user percentages, I’m reminded of “gamification” as a
 <h3>
 <a id="support-or-contact" class="anchor" href="#support-or-contact" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Section 4: Conclusion</h3>
 
-<p>After this review of the data it’s obvious that the Irvine city area is incomplete, though I believe it has been well cleaned for the purposes of this exercise. It interests me to notice a fair amount of GPS data makes it into OpenStreetMap.org on account of users’ efforts. With a rough GPS data processor in place and working together with a more robust data processor similar to data.pyI think it would be possible to input a great amount of cleaned data to OpenStreetMap.org.</p>
+<p>After this review of the data it’s obvious that the Irvine city area is incomplete, though I believe it has been well cleaned for the purposes of this exercise. However, the improvement may bring about potential problems:</p>
+1.The pattern detection technique may not be throrough enough for future input of postcode
+<br>
+2.By updating an abbreviated name, we may incorrectly modify it; for example: from "La Colina Dr" to  "Lane Colina Drive"
+<br><br>
 
-<h3>
-<a id="support-or-contact" class="anchor" href="#support-or-contact" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Section 5: References</h3>
+<p>It interests me to notice a fair amount of GPS data makes it into OpenStreetMap.org on account of users’ efforts. With a rough GPS data processor in place and working together with a more robust data processor similar to data.py, I think it would be possible to input great amount of cleaned data to OpenStreetMap.org.</p>
+
         </section>
-
         <footer>
           Wrangle-openstreetmap-data is maintained by <a href="https://github.com/baocongchen">baocongchen</a><br>
           This page was generated by <a href="https://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.
