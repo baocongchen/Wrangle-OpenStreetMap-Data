@@ -5,8 +5,8 @@ import pprint
 import re
 import codecs
 import json
-from audit import update_name, mapping
-from audit_postcode import audit_postcode
+from update_name import update_name, mapping
+from audit_postcode import update_postcode
 """
 Your task is to wrangle the data and transform the shape of the data
 into the model we mentioned earlier. The output should be a list of dictionaries
@@ -118,7 +118,7 @@ def shape_element(element):
             else:
                 node[attr] = element.attrib[attr]    
         for subtag in element.iter('tag'):
-            key,value = subtag.attrib['k'], subtag.attrib['v']
+            key, value = subtag.attrib['k'], subtag.attrib['v']
             if problemchars.match(key):
                 continue
             elif lower_colon.match(key):
@@ -129,7 +129,7 @@ def shape_element(element):
                     if subtagjsonkey[1] == 'street':
                         node['address'][subtagjsonkey[1]] = update_name(value, mapping)
                     elif subtagjsonkey[1] == 'postcode':
-                        node['address'][subtagjsonkey[1]] = audit_postcode(value)
+                        node['address'][subtagjsonkey[1]] = update_postcode(value)
                 elif subtagjsonkey[0] == 'turn':
                     continue
                 else:

@@ -4,7 +4,7 @@ d5_d4 = re.compile(r'^(\d{5})-\d{4}$')
 w2_d5 = re.compile(r'^[a-zA-Z]{2}\s(\d{5})$')
 d5_c  = re.compile(r'^(\d{5}).+$')
 
-def audit_postcode(postcode):
+def update_postcode(postcode):
 	"""detects pattern and returns clean postcode"""
 	if re.match(d5, postcode):
 	    return postcode
