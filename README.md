@@ -24,3 +24,6 @@ And this project will teach you all of the skills you need to deal with even the
 As this New York Times article points out, the less heralded part of doing data science is manually collecting and cleaning data so it can be easily explored and analyzed later. Or otherwise known as “data wrangling” or “data munging” in the data science community.
 
 Though not as glamorous as building cool machine learning models, data wrangling is a task that data scientists can spend up to 50-80% of their time doing according to many practicing data analyst and data scientists.
+
+## Presentation
+[Wrangle OpenStreetMap Data](https://baocongchen.github.io/Wrangle-OpenStreetMap-Data/ "Wrangle OpenStreetMap Data")
